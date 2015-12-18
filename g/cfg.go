@@ -2,9 +2,10 @@ package g
 
 import (
 	"encoding/json"
-	"github.com/toolkits/file"
 	"log"
 	"sync"
+
+	"github.com/toolkits/file"
 )
 
 type HttpConfig struct {
@@ -32,6 +33,13 @@ type ApiConfig struct {
 	Mail string `json:"mail"`
 }
 
+type SmsConfig struct {
+	UID   string `json:"UID"`
+	PWD   string `json:"PWD"`
+	TYPE  string `json:"TYPE"`
+	MSGID string `json:"MSGID"`
+}
+
 type GlobalConfig struct {
 	Debug  bool          `json:"debug"`
 	Http   *HttpConfig   `json:"http"`
@@ -39,6 +47,7 @@ type GlobalConfig struct {
 	Queue  *QueueConfig  `json:"queue"`
 	Worker *WorkerConfig `json:"worker"`
 	Api    *ApiConfig    `json:"api"`
+	Sms    *SmsConfig    `json:"sms"`
 }
 
 var (

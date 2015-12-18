@@ -1,13 +1,15 @@
 package cron
 
 import (
+	"log"
+	"strings"
+	"time"
+
 	"github.com/open-falcon/sender/g"
 	"github.com/open-falcon/sender/model"
 	"github.com/open-falcon/sender/proc"
 	"github.com/open-falcon/sender/redis"
 	"github.com/toolkits/net/httplib"
-	"log"
-	"time"
 )
 
 func ConsumeSms() {
@@ -34,20 +36,39 @@ func SendSms(sms *model.Sms) {
 		<-SmsWorkerChan
 	}()
 
-	url := g.Config().Api.Sms
-	r := httplib.Post(url).SetTimeout(5*time.Second, 2*time.Minute)
-	r.Param("tos", sms.Tos)
-	r.Param("content", sms.Content)
-	resp, err := r.String()
+	if g.Config().Debug {
+		log.Println("==sms==>>>>", sms)
+	}
+
+	tos := strings.Replace(sms.Tos, ";", ",", -1)
+	arr := strings.Split(tos, ",")
+	for i := 0; i < len(arr); i++ {
+		if arr[i] == "" {
+			continue
+		}
+		err := _sms(arr[i], sms.Content)
+		if err != nil {
+			log.Println(err)
+		}
+	}
+}
+
+func _sms(phone, content string) error {
+	cfg := g.Config()
+	url := cfg.Api.Sms
+	r := httplib.Get(url).SetTimeout(5*time.Second, 2*time.Minute)
+	r.Param("PHONE", phone)
+	r.Param("CONTENT", content)
+	r.Param("UID", cfg.Sms.UID)
+	r.Param("PWD", cfg.Sms.PWD)
+	r.Param("TYPE", cfg.Sms.TYPE)
+	r.Param("MSGID", cfg.Sms.MSGID)
+	_, err := r.String()
 	if err != nil {
 		log.Println(err)
+		return err
 	}
 
 	proc.IncreSmsCount()
-
-	if g.Config().Debug {
-		log.Println("==sms==>>>>", sms)
-		log.Println("<<<<==sms==", resp)
-	}
-
+	return nil
 }
